@@ -1,6 +1,7 @@
 # SkibidiOS
 my OS
 
+# Building and running
 1. To build the OS use:
 ```bash
 make clean
