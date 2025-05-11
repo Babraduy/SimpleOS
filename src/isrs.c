@@ -78,8 +78,7 @@ void _fault_handler(regs* r)
 {
 	if (r->int_no < 32)
 	{
-		clear_screen();
-		print(exception_msg[r->int_no], 0x47);
+		kprint(exception_msg[r->int_no], 0x47);
 		for(;;);
 	}
 }

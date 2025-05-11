@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stddef.h>
 #include "libio.h"
 #include "libstr.h"
 #include "idt.h"
@@ -6,6 +7,8 @@
 #include "irq.h"
 #include "timer.h"
 #include "heap.h"
+#include "disk_driver.h"
+#include "fat12.h"
 
 extern void main()
 {
@@ -18,8 +21,28 @@ extern void main()
 
 	enable_cursor(14, 15);
 
-	while (1)
+	if (!fat_install())
 	{
-		set_string_f(VGA_WIDTH - 12, 0, "X:%d ,Y:%d ", 0x4f, get_cursor_x(), get_cursor_y());
+		uint8_t data[700];
+		for (int i=0; i<699; i++)
+		{
+			data[i] = 'a';
+		}
+
+		data[699] = '\0';
+
+		fat_create_file("heheheha.txt", data, strlen((char*)data));
+
+		char* ret = (char*) fat_read_file("heheheha.txt");
+		if (ret != NULL) kprint(ret, 0x0d);
+	}
+
+	heap_status();
+	list_disks();
+
+	while(1)
+	{
+		set_stringf(VGA_WIDTH - 20, 3, "X: %d ", 0x1e, get_cursor_x());
+		set_stringf(VGA_WIDTH - 20, 4, "Y: %d ", 0x1e, get_cursor_y());
 	}
 }

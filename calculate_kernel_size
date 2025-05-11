@@ -1,0 +1,5 @@
+#!/bin/bash
+
+bytes=$( stat -c%s bin/kernel.bin )
+let "sectors=($bytes + 511) / 512"
+echo "${sectors}"

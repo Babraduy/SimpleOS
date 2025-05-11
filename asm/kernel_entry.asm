@@ -1,12 +1,13 @@
 [bits 32]
-[extern main]
+
+extern main
 
 global _start_kernel_entry
 
 section .text
 _start_kernel_entry:
-	call main
+	call main			; call the main function
 
-hang:
+hang:					; hang after main function returns
 	hlt
 	jmp hang

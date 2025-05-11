@@ -56,7 +56,7 @@ uint8_t get_cursor_y()
 	return get_cursor_pos() / VGA_WIDTH;
 }
 
-void printf(const char* string, uint8_t color, ...)
+void kprintf(const char* string, uint8_t color, ...)
 {
 	va_list args;
 	va_start(args, color);
@@ -65,34 +65,62 @@ void printf(const char* string, uint8_t color, ...)
 	{
 		if (*string == '%')
 		{
-			char* temp = (char*) malloc(8 * sizeof(char));
+			char temp[20] = "";
+			temp[19] = '\0';
 			switch(*(string + 1))
 			{
 				case 'd':
-					int val = va_arg(args, int);
-					itoa(val, temp, 10);
-					print(temp, color);
+					int int_arg = va_arg(args, int);
+					itoa(int_arg, temp, 10);
+					kprint(temp, color);
+					string += 2;
+					continue;
+
+				case 'l':
+					long long_arg = va_arg(args, long);
+					itoa(long_arg, temp, 10);
+					kprint(temp, color);
+					string += 2;
+					continue;
+
+				case 'x':
+					int hex_arg = va_arg(args, int);
+					itoa(hex_arg, temp, 16);
+					kprint(temp, color);
+					string += 2;
+					continue;
+
+				case 's':
+					char* str_arg = va_arg(args, char*);
+					kprint(str_arg, color);
+					string += 2;
+					continue;
+
+				case 'u':
+					uint32_t uint_arg = va_arg(args, uint32_t);
+					utoa(uint_arg, temp, 10);
+					kprint(temp, color);
 					string += 2;
 					continue;
 			}
 		}
 
-		print_c(*string, color);
+		kprint_c(*string, color);
 		string++;
 	}
 
 	va_end(args);
 }
 
-void print(const char* string, uint8_t color)
+void kprint(const char* string, uint8_t color)
 {
 	for (int i = 0; i < strlen(string);i++)
 	{
-		print_c(string[i], color);
+		kprint_c(string[i], color);
 	}
 }
 
-void print_c(char c, uint8_t color)
+void kprint_c(char c, uint8_t color)
 {
 	char* vga = (char*) 0xb8000;
 
@@ -144,7 +172,7 @@ void set_string(int x, int y, const char* string, uint8_t color)
 	}
 }
 
-void set_string_f(int x, int y, const char* string, uint8_t color, ...)
+void set_stringf(int x, int y, const char* string, uint8_t color, ...)
 {
 	va_list args;
 	va_start(args, color);
@@ -153,14 +181,81 @@ void set_string_f(int x, int y, const char* string, uint8_t color, ...)
 	{
 		if (*string == '%')
 		{
-			char temp[10] = "";
+			char temp[20] = "";
+			char* p;
 			switch(*(string + 1))
 			{
 				case 'd':
-					int val = va_arg(args, int);
-					itoa(val, temp, 10);
-					set_string(x, y, temp, color);
-					x += strlen(temp);
+					int int_arg = va_arg(args, int);
+					itoa(int_arg, temp, 10);
+
+					p = temp;
+					while (*p)
+					{
+						set_char(x,y,*p,color);
+						x++;
+						p++;
+					}
+
+					string += 2;
+					continue;
+
+				case 'l':
+					long long_arg = va_arg(args, long);
+					itoa(long_arg, temp, 10);
+					
+					p = temp;
+					while (*p)
+					{
+						set_char(x,y,*p,color);
+						x++;
+						p++;
+					}
+
+					string += 2;
+					continue;
+
+				case 'x':
+					int hex_arg = va_arg(args, int);
+					itoa(hex_arg, temp, 16);
+
+					p = temp;
+					while (*p)
+					{
+						set_char(x,y,*p,color);
+						x++;
+						p++;
+					}
+
+					string += 2;
+					continue;
+
+				case 's':
+					char* str_arg = va_arg(args, char*);
+					p = str_arg;
+
+					while (*p)
+					{
+						set_char(x,y,*p,color);
+						x++;
+						p++;
+					}
+
+					string += 2;
+					continue;
+
+				case 'u':
+					uint32_t uint_arg = va_arg(args, uint32_t);
+					utoa(uint_arg, temp, 10);
+
+					p = temp;
+					while (*p)
+					{
+						set_char(x,y,*p, color);
+						x++;
+						p++;
+					}
+
 					string += 2;
 					continue;
 			}
@@ -190,7 +285,7 @@ int keystatus = 0; // 0x0 = nothing, 0x01 = shift, 0x02 = ctrl, 0x04 = alt, 0x08
 
 int extended = 0;
 
-unsigned char keymap[128] = {
+char keymap[128] = {
 	0,  27, '1', '2', '3', '4', '5', '6', '7', '8',	/* 9 */
 	'9', '0', '-', '=', '\b',	/* Backspace */
 	0,			/* Tab */
@@ -229,7 +324,7 @@ unsigned char keymap[128] = {
 	0,	/* All other keys are undefined */	
 };
 
-unsigned char shift_keymap[128] = {
+char shift_keymap[128] = {
 	0,  27, '!', '@', '#', '$', '%', '^', '&', '*',	/* 9 */
 	'(', ')', '_', '+', '\b',	/* Backspace */
 	0,			/* Tab */
@@ -311,8 +406,8 @@ void keyboard_handler(regs* r)
 
 		if (keymap[scancode] != 0)		// any other key
 		{
-			if ((keystatus & 0x01) == 0) print_c(keymap[scancode], 0x0d);
-			else print_c(shift_keymap[scancode], 0x0d);
+			if ((keystatus & 0x01) == 0) kprint_c(keymap[scancode], 0x0d);
+			else kprint_c(shift_keymap[scancode], 0x0d);
 		}
 	}
 

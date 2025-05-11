@@ -5,6 +5,7 @@ DATA_SEG equ data_descriptor - GDT_Start
 
 KERNEL_LOCATION equ 0x1000
 BOOT_DISK db 0
+KERNEL_SECTORS equ 40 ; from script 'calculate_kernel_size'
 
 mov [BOOT_DISK], dl
 
@@ -18,16 +19,15 @@ _start:
 	mov bp, 0x8000
 	mov sp, bp
 
-	mov ah, 2			; to read sectors, ah must be 2
+	mov ah, 2			; to read sectors
 	mov ch, 0			; cylinder number
 	mov cl, 2			; sector number
 
-	mov dh, 32			; set al to 20 sectors
-	mov al, dh
+	mov al, KERNEL_SECTORS		; read the whole kernel
 
 	mov dh, 0			; set dh (number of head) to 0
 	mov dl, [BOOT_DISK]		; boot disk number
-	mov bx, KERNEL_LOCATION		; set bx to our skibidi kernel location
+	mov bx, KERNEL_LOCATION		; set bx to kernel location
 	int 0x13			; interrupt
 
 	jc DISK_ERROR
@@ -103,7 +103,7 @@ start_protected_mode:
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
-	mov ebp, 0x90000
+	mov ebp, 0x90000		; set up the stack
 	mov esp, ebp
 
 	jmp KERNEL_LOCATION		; jump to the kernel
