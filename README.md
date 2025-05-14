@@ -13,7 +13,7 @@ Currently the OS has:
 make clean
 make all
 ```
-2. To run the OS (with qemu) use:
+2. To run the OS (with qemu) type:
 ```bash
 make run
 ```
