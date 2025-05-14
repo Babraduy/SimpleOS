@@ -23,17 +23,7 @@ extern void main()
 
 	if (!fat_install())
 	{
-		uint8_t data[700];
-		for (int i=0; i<699; i++)
-		{
-			data[i] = 'a';
-		}
-
-		data[699] = '\0';
-
-		fat_create_file("heheheha.txt", data, strlen((char*)data));
-
-		char* ret = (char*) fat_read_file("heheheha.txt");
+		char* ret = (char*) fat_read_file("testdir/testfile.txt");
 		if (ret != NULL) kprint(ret, 0x0d);
 	}
 

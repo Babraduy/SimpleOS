@@ -44,6 +44,10 @@ extern uint8_t* fat_read_file(char* name);
 extern void fat_create_file(char* name, uint8_t* data, uint32_t size);
 extern void fat_modify_file(char* name, uint8_t* new_data, uint32_t size);
 extern void fat_delete_file(char* name);
+extern void fat_rename_file(char* name, char* new_name);
+extern root_entry* fat_read_dir(char* name);
+extern void fat_change_dir(char* name);
+extern void fat_create_dir(char* name);
 extern int fat_install();
 
 #endif

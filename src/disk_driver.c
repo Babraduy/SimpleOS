@@ -197,9 +197,9 @@ int write_disk (uint8_t index, uint32_t num_sectors, uint32_t start, uint8_t* da
 			return -1;
 		}
 		outb(disks[index].port + 0x02, num_sectors >= 256 ? 0 : num_sectors);	// number of sectors to write
-		outb(disks[index].port + 0x03, lba & 0xff);					// lba lower byte
-		outb(disks[index].port + 0x04, (lba >> 8) & 0xff);				// lba medium byte
-		outb(disks[index].port + 0x05, (lba >> 16) & 0xff);				// lba high byte
+		outb(disks[index].port + 0x03, lba & 0xff);				// lba lower byte
+		outb(disks[index].port + 0x04, (lba >> 8) & 0xff);			// lba medium byte
+		outb(disks[index].port + 0x05, (lba >> 16) & 0xff);			// lba high byte
 		outb(disks[index].port + 0x07, 0x30);					// write command
 
 		for (int i=0; i<sectors_to_write; i++)

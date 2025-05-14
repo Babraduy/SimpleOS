@@ -133,6 +133,23 @@ char* strcat(char* dest, const char* src)
 	return strcpy(dest, src);
 }
 
+char* strncat(char* dest, const char* src, int len)
+{
+	char* tmp = dest;
+
+	while (*tmp) tmp++;
+
+	int i;
+	for (i=0; i<len && src[i] != '\0'; i++)
+	{
+		tmp[i] = src[i];
+	}
+
+	tmp[i] = '\0';
+
+	return dest;
+}
+
 char* strcpy(char* dest, const char* src)
 {
 	while (*src) *dest++ = *src++;
@@ -144,9 +161,11 @@ char* strcpy(char* dest, const char* src)
 
 char* strncpy(char* dest, const char* src, int len)
 {
+	char* tmp = dest;
+
 	for (int i=0;i<len; i++)
 	{
-		*dest++ = *src++;
+		*tmp++ = *src++;
 	}
 
 	return dest;
