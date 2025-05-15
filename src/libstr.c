@@ -115,20 +115,23 @@ void* memset(void* data, uint8_t val, int count)
 	return data;
 }
 
-void* memcpy(void* dest, void* src, int count)
+void* memcpy(void* dest, const void* src, int count)
 {
 	uint8_t* p_dest = (uint8_t*) dest;
-	uint8_t* p_src = (uint8_t*) src;
+	const uint8_t* p_src = (const uint8_t*) src;
 	for (int i=0; i<count; i++)
 	{
 		p_dest[i] = p_src[i];
 	}
+
 	return dest;
 }
 
 char* strcat(char* dest, const char* src)
 {
-	while (*dest) dest++;
+	char* tmp = dest;
+
+	while (*tmp) tmp++;
 
 	return strcpy(dest, src);
 }
@@ -152,9 +155,11 @@ char* strncat(char* dest, const char* src, int len)
 
 char* strcpy(char* dest, const char* src)
 {
-	while (*src) *dest++ = *src++;
+	char* tmp = dest;
 
-	*dest = '\0';
+	while (*src) *tmp++ = *src++;
+
+	*tmp = '\0';
 
 	return dest;
 }
@@ -163,10 +168,13 @@ char* strncpy(char* dest, const char* src, int len)
 {
 	char* tmp = dest;
 
-	for (int i=0;i<len; i++)
+	int i;
+	for (i=0;i<len; i++)
 	{
-		*tmp++ = *src++;
+		tmp[i] = src[i];
 	}
+
+	tmp[i] = '\0';
 
 	return dest;
 }

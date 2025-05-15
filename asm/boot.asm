@@ -5,7 +5,7 @@ DATA_SEG equ data_descriptor - GDT_Start
 
 KERNEL_LOCATION equ 0x1000
 BOOT_DISK db 0
-KERNEL_SECTORS equ 50 ; from script 'calculate_kernel_size'
+KERNEL_SECTORS equ 52 ; from script 'calculate_kernel_size'
 
 mov [BOOT_DISK], dl
 

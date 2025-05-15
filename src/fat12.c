@@ -44,46 +44,24 @@ root_entry fat_find_file(char* name)
 	if (name[0] != '/') strncpy(filepath, dir, strlen(dir));	// relative path
 	strncat(filepath, name, strlen(name) + 1);			// absolute path
 									//
-	char* tmp = (char*) kmalloc((strlen(filepath)) * sizeof(char));
+	char* tmp = (char*) kmalloc((strlen(filepath) + 1) * sizeof(char));
+	char* p_tmp = tmp;
 	if (tmp == NULL)
 	{
 		root_entry file;
 		file.start_cluster = 0xfff;
 		return file;
 	}
+
+	char* tmp_name = name;
 	strncpy(tmp, filepath + 1, strlen(filepath) - 1);
-
-	char* last_slash = strrchr(filepath, '/');
-	name += (name - last_slash);
-
-	root_entry* root_entries = NULL;
-	char dir_name[9];
-	while (strchr(tmp, '/') != NULL)
+	char* last_slash = strrchr(name, '/');
+	if (last_slash != NULL)
 	{
-		char* slash = strchr(tmp, '/');
-		int len = slash - tmp;
-
-		memset(dir_name, ' ', 8);
-		dir_name[8] = '\0';
-
-		strncpy(dir_name, tmp, len);
-		strupper(dir_name);
-
-		root_entries = fat_read_dir(dir_name);
-
-		tmp += len + 1;
-	}
-	kfree(tmp);
-	kfree(filepath);
-
-	if (root_entries == NULL) root_entries = (root_entry*) read_disk(index, (bpb_data->root_ent * 32 + 511) / 512, bpb_data->reserved + bpb_data->num_fat * bpb_data->sec_per_fat);
-
-	if (root_entries == NULL)
-	{
-		kprint("Error while trying to read the root entries\n", 0x47);
+		tmp_name = last_slash + 1;
 	}
 
-	char* dot = strrchr(name, '.');
+	char* dot = strrchr(tmp_name, '.');
 
 	char filename[9];
 	char extension[4];
@@ -96,18 +74,45 @@ root_entry fat_find_file(char* name)
 
 	if (dot != NULL)
 	{
-		int len = dot - name;
+		int len = dot - tmp_name;
 		if (len > 8) len = 8;
-		strncpy(filename, name, len);
+		memcpy(filename, tmp_name, len);
 		strupper(filename);
 
-		strncpy(extension, dot + 1, 3);
+		memcpy(extension, dot + 1, 3);
 		strupper(extension);
 	}
 	else
 	{
-		strcpy(filename, name);
+		memcpy(filename, tmp_name, strlen(tmp_name));
 		strupper(filename);
+	}
+
+	root_entry* root_entries = NULL;
+	char dir_name[9];
+	while (strchr(tmp, '/') != NULL)
+	{
+		char* slash = strchr(tmp, '/');
+		int len = slash - tmp;
+
+		memset(dir_name, ' ', 8);
+		dir_name[8] = '\0';
+
+		memcpy(dir_name, tmp, len);
+		strupper(dir_name);
+
+		root_entries = fat_read_dir(dir_name);
+
+		tmp += len + 1;
+	}
+	kfree(p_tmp);
+	kfree(filepath);
+
+	if (root_entries == NULL) root_entries = (root_entry*) read_disk(index, (bpb_data->root_ent * 32 + 511) / 512, bpb_data->reserved + bpb_data->num_fat * bpb_data->sec_per_fat);
+
+	if (root_entries == NULL)
+	{
+		kprint("Error while trying to read the root entries\n", 0x47);
 	}
 
 	root_entry file;
@@ -630,18 +635,26 @@ root_entry* fat_read_dir(char* name)
 		return NULL;
 	}
 
-	root_entry* data = (root_entry*) kmalloc(file.size);
+	uint32_t reserved = (uint32_t) bpb_data->reserved;
+	uint32_t fat_size = (uint32_t) bpb_data->num_fat * (uint32_t) bpb_data->sec_per_fat;
+	uint32_t root_sectors = ((uint32_t) bpb_data->root_ent * 32 + (uint32_t) bpb_data->sector_size -1) / (uint32_t) bpb_data->sector_size;
+
+	uint32_t data_size = 1 * bpb_data->sector_size * bpb_data->sec_per_cluster;
+	uint8_t* data = (uint8_t*) kmalloc(data_size);
 	if (data == NULL)
 	{
 		kprint("Could not allocate memory for 'data'\n", 0x47);
 		return NULL;
 	}
 	uint16_t cluster = file.start_cluster;
-	int total_size = 0;
+	uint32_t total_size = 0;
 
 	while(cluster < 0xff0)
 	{
-		root_entry* tmp_data = (root_entry*) read_disk(index, bpb_data->sec_per_cluster * bpb_data->sector_size / 512, bpb_data->reserved + bpb_data->num_fat * bpb_data->sec_per_fat + (bpb_data->root_ent * 32 + bpb_data->sector_size-1) / bpb_data->sector_size + (cluster - 2) * bpb_data->sec_per_cluster * bpb_data->sector_size / 512);
+		uint32_t cluster_offset = (uint32_t) ((uint32_t) cluster - 2) * (uint32_t) bpb_data->sec_per_cluster;
+		uint32_t total = reserved + fat_size + root_sectors + cluster_offset;
+
+		uint8_t* tmp_data = (uint8_t*) read_disk(index, bpb_data->sec_per_cluster, total);
 
 		if (tmp_data == NULL)
 		{
@@ -650,16 +663,19 @@ root_entry* fat_read_dir(char* name)
 			return NULL;
 		}
 
-		if (total_size + bpb_data->sector_size * bpb_data->sec_per_cluster > (int)file.size)
+		uint8_t* new_data = (uint8_t*) kmalloc(data_size + bpb_data->sec_per_cluster * 512);
+		if (new_data == NULL)
 		{
-			memcpy(data + total_size, tmp_data, file.size - total_size);
-			total_size += file.size - total_size;
+			kfree(data);
+			kprint("Could not allocate memory for 'new_data'\n", 0x47);
+			return NULL;
 		}
-		else
-		{
-			memcpy(data + total_size, tmp_data, bpb_data->sector_size * bpb_data->sec_per_cluster);
-			total_size += bpb_data->sector_size * bpb_data->sec_per_cluster;
-		}
+		memcpy(new_data, data, data_size);
+		data = new_data;
+		data_size += bpb_data->sec_per_cluster * 512;
+
+		memcpy(data + total_size, tmp_data, bpb_data->sector_size * bpb_data->sec_per_cluster);
+		total_size += bpb_data->sector_size * bpb_data->sec_per_cluster;
 
 		if (cluster % 2 == 0)
 		{
@@ -673,7 +689,9 @@ root_entry* fat_read_dir(char* name)
 
 	kfree(fat_entries);
 
-	return data;
+	root_entry* root_entry_data = (root_entry*) data;
+
+	return root_entry_data;
 }
 
 void fat_change_dir(char* name)

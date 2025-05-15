@@ -19,14 +19,14 @@ KERNEL_ENTRY_OBJ = obj/kernel_entry.o
 
 KERNEL_OUTPUT = kernel.bin
 FINAL_OUTPUT = SimpleOS.bin
-ISO_NAME = SimpleOS.iso
+ISO_NAME = myos.iso
 DISK_NAME = fat.img
 
 GCC_FLAGS = -ffreestanding -I include -m32 -nostdlib -fno-pie -fno-pic -c -Wall -Wextra -fno-omit-frame-pointer -mno-red-zone -O0 -ffunction-sections
 NASM_FLAGS = -f elf
 LD_FLAGS = -T ld/linker.ld --oformat binary --gc-sections
 QEMU_FLAGS = -drive format=raw,file="$(BIN_DIR)/$(FINAL_OUTPUT)",index=0,if=floppy -m 128M -boot order=a -drive format=raw,file="$(DISK_NAME)",index=0,if=ide 
-QEMU_ISO_FLAGS = -cdrom $(ISO_NAME) -boot d -m 128M -s -S #-hda $(DISK_NAME)
+QEMU_ISO_FLAGS = -cdrom $(ISO_NAME) -boot d -m 128M -hda $(DISK_NAME)
 
 all: $(OBJ_DIR) $(BIN_DIR) $(KERNEL_OUTPUT)
 

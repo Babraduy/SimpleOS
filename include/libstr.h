@@ -7,7 +7,7 @@ extern char* reverse(char* string);
 extern char* itoa(int val, char* str, int base);
 extern char* utoa(uint32_t val, char* str, int base);
 extern void* memset(void* data, uint8_t val, int count);
-extern void* memcpy(void* dest, void* src, int count);
+extern void* memcpy(void* dest, const void* src, int count);
 extern char* strcat(char* dest, const char* src);
 extern char* strncat(char* dest, const char* src, int len);
 extern char* strcpy(char* dest, const char* src);
